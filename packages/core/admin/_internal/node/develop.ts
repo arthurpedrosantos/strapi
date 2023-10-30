@@ -3,31 +3,93 @@ import * as tsUtils from '@strapi/typescript-utils';
 import { joinBy } from '@strapi/utils';
 import chokidar from 'chokidar';
 import cluster from 'node:cluster';
+import strapiFactory from '@strapi/strapi';
 
 import { getTimer } from './core/timer';
 import { checkRequiredDependencies } from './core/dependencies';
 import { createBuildContext } from './createBuildContext';
-import { watch as watchWebpack } from './webpack/watch';
+import type { WebpackWatcher } from './webpack/watch';
+import type { ViteWatcher } from './vite/watch';
 
 import EE from '@strapi/strapi/dist/utils/ee';
 import { writeStaticClientFiles } from './staticFiles';
 
 interface DevelopOptions extends CLIContext {
+  /**
+   * @default false
+   */
+  ignorePrompts?: boolean;
+  /**
+   * Which bundler to use for building.
+   *
+   * @default webpack
+   */
+  bundler?: 'webpack' | 'vite';
   polling?: boolean;
   open?: boolean;
+  watchAdmin?: boolean;
 }
 
-const develop = async ({ cwd, polling, logger, tsconfig, ...options }: DevelopOptions) => {
+const develop = async ({
+  cwd,
+  polling,
+  logger,
+  tsconfig,
+  ignorePrompts,
+  watchAdmin,
+  ...options
+}: DevelopOptions) => {
   const timer = getTimer();
 
   if (cluster.isPrimary) {
-    const { didInstall } = await checkRequiredDependencies({ cwd, logger }).catch((err) => {
-      logger.error(err.message);
-      process.exit(1);
-    });
+    const { didInstall } = await checkRequiredDependencies({ cwd, logger, ignorePrompts }).catch(
+      (err) => {
+        logger.error(err.message);
+        process.exit(1);
+      }
+    );
 
     if (didInstall) {
       return;
+    }
+
+    /**
+     * IF we're not watching the admin we're going to build it, this makes
+     * sure that at least the admin is built for users & they can interact
+     * with the application.
+     */
+    if (!watchAdmin) {
+      timer.start('createBuildContext');
+      const contextSpinner = logger.spinner(`Building build context`).start();
+      console.log('');
+
+      const ctx = await createBuildContext({
+        cwd,
+        logger,
+        tsconfig,
+        options,
+      });
+      const contextDuration = timer.end('createBuildContext');
+      contextSpinner.text = `Building build context (${contextDuration}ms)`;
+      contextSpinner.succeed();
+
+      timer.start('creatingAdmin');
+      const adminSpinner = logger.spinner(`Creating admin`).start();
+
+      EE.init(cwd);
+      await writeStaticClientFiles(ctx);
+
+      if (ctx.bundler === 'webpack') {
+        const { build: buildWebpack } = await import('./webpack/build');
+        await buildWebpack(ctx);
+      } else if (ctx.bundler === 'vite') {
+        const { build: buildVite } = await import('./vite/build');
+        await buildVite(ctx);
+      }
+
+      const adminDuration = timer.end('creatingAdmin');
+      adminSpinner.text = `Creating admin (${adminDuration}ms)`;
+      adminSpinner.succeed();
     }
 
     cluster.on('message', async (worker, message) => {
@@ -66,32 +128,51 @@ const develop = async ({ cwd, polling, logger, tsconfig, ...options }: DevelopOp
       compilingTsSpinner.succeed();
     }
 
-    timer.start('createBuildContext');
-    const contextSpinner = logger.spinner(`Building build context`).start();
-    console.log('');
-
-    const ctx = await createBuildContext({
-      cwd,
-      logger,
-      tsconfig,
-      options,
+    const strapi = strapiFactory({
+      appDir: cwd,
+      distDir: tsconfig?.config.options.outDir ?? '',
+      autoReload: true,
+      serveAdminPanel: !watchAdmin,
     });
-    const contextDuration = timer.end('createBuildContext');
-    contextSpinner.text = `Building build context (${contextDuration}ms)`;
-    contextSpinner.succeed();
 
-    timer.start('creatingAdmin');
-    const adminSpinner = logger.spinner(`Creating admin`).start();
+    let bundleWatcher: WebpackWatcher | ViteWatcher | undefined;
 
-    EE.init(cwd);
-    await writeStaticClientFiles(ctx);
-    await watchWebpack(ctx);
+    if (watchAdmin) {
+      timer.start('createBuildContext');
+      const contextSpinner = logger.spinner(`Building build context`).start();
+      console.log('');
 
-    const adminDuration = timer.end('creatingAdmin');
-    adminSpinner.text = `Creating admin (${adminDuration}ms)`;
-    adminSpinner.succeed();
+      const ctx = await createBuildContext({
+        cwd,
+        logger,
+        tsconfig,
+        strapi,
+        options,
+      });
+      const contextDuration = timer.end('createBuildContext');
+      contextSpinner.text = `Building build context (${contextDuration}ms)`;
+      contextSpinner.succeed();
 
-    const strapiInstance = await ctx.strapi.load();
+      timer.start('creatingAdmin');
+      const adminSpinner = logger.spinner(`Creating admin`).start();
+
+      EE.init(cwd);
+      await writeStaticClientFiles(ctx);
+
+      if (ctx.bundler === 'webpack') {
+        const { watch: watchWebpack } = await import('./webpack/watch');
+        bundleWatcher = await watchWebpack(ctx);
+      } else if (ctx.bundler === 'vite') {
+        const { watch: watchVite } = await import('./vite/watch');
+        bundleWatcher = await watchVite(ctx);
+      }
+
+      const adminDuration = timer.end('creatingAdmin');
+      adminSpinner.text = `Creating admin (${adminDuration}ms)`;
+      adminSpinner.succeed();
+    }
+
+    const strapiInstance = await strapi.load();
 
     timer.start('generatingTS');
     const generatingTsSpinner = logger.spinner(`Generating types`).start();
@@ -165,6 +246,10 @@ const develop = async ({ cwd, polling, logger, tsconfig, ...options }: DevelopOp
           );
           await watcher.close();
           await strapiInstance.destroy();
+
+          if (bundleWatcher) {
+            bundleWatcher.close();
+          }
           process.send?.('killed');
           break;
         }

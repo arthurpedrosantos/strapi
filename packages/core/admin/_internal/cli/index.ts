@@ -8,6 +8,8 @@ import type { DevelopCLIOptions } from './commands/develop';
 const build: StrapiCommand = ({ command, ctx }) => {
   command
     .command('build')
+    .option('--bundler [bundler]', 'Bundler to use (webpack or vite)', 'webpack')
+    .option('--ignore-prompts', 'Ignore all prompts', false)
     .option('-d, --debug', 'Enable debugging mode with verbose logs', false)
     .option('--minify', 'Minify the output', true)
     .option('--no-optimization', '[deprecated]: use minify instead')
@@ -29,6 +31,9 @@ const develop: StrapiCommand = ({ command, ctx }) => {
   command
     .command('develop')
     .alias('dev')
+    .option('--bundler [bundler]', 'Bundler to use (webpack or vite)', 'webpack')
+    .option('--ignore-prompts', 'Ignore all prompts', false)
+    .option('--watch-admin', 'Watch the admin panel for hot changes', false)
     .option('-d, --debug', 'Enable debugging mode with verbose logs', false)
     .option('--silent', "Don't log anything", false)
     .option('--polling', 'Watch for file changes in network directories', false)
