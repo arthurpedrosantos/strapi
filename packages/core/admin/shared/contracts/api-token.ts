@@ -1,11 +1,22 @@
 import { errors } from '@strapi/utils';
 import { ValidationError as YupValidationError } from 'yup';
+import { Entity } from '@strapi/types';
 
-// @ts-expect-error - No types for this yet
-import type { ApiToken } from '../../server/services/api-token';
+type ApiToken = {
+  accessKey: string;
+  createdAt: string;
+  description: string;
+  expiresAt: string;
+  id: Entity.ID;
+  lastUsedAt: string | null;
+  lifespan: string;
+  name: string;
+  permissions: any[];
+  type: 'custom' | 'full-access' | 'read-only';
+  updatedAt: string;
+};
 
 type ApiTokenBody = Pick<ApiToken, 'lifespan' | 'description' | 'type' | 'name' | 'permissions'>;
-type ApiTokenResponse = Omit<ApiToken, 'accessKey'>;
 
 /**
  * POST /api-tokens - Create an api token
@@ -32,7 +43,7 @@ export declare namespace List {
   }
 
   export interface Response {
-    data: ApiTokenResponse[];
+    data: ApiToken[];
     error?: errors.ApplicationError;
   }
 }
@@ -51,7 +62,7 @@ export declare namespace Revoke {
   }
 
   export interface Response {
-    data: ApiTokenResponse;
+    data: ApiToken;
     error?: errors.ApplicationError;
   }
 }
@@ -70,7 +81,7 @@ export declare namespace Get {
   }
 
   export interface Response {
-    data: ApiTokenResponse;
+    data: ApiToken;
     error?: errors.ApplicationError;
   }
 }
@@ -89,7 +100,7 @@ export declare namespace Update {
   }
 
   export interface Response {
-    data: ApiTokenResponse;
+    data: ApiToken;
     error?: errors.ApplicationError | YupValidationError;
   }
 }
