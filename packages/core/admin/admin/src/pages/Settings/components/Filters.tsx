@@ -1,15 +1,20 @@
-import React, { useRef, useState } from 'react';
+import * as React from 'react';
 
 import { Box, Button } from '@strapi/design-system';
-import { FilterListURLQuery, FilterPopoverURLQuery } from '@strapi/helper-plugin';
+import {
+  FilterListURLQuery,
+  FilterPopoverURLQuery,
+  FilterPopoverURLQueryProps,
+} from '@strapi/helper-plugin';
 import { Filter } from '@strapi/icons';
-import PropTypes from 'prop-types';
 import { useIntl } from 'react-intl';
 
-const Filters = ({ displayedFilters }) => {
-  const [isVisible, setIsVisible] = useState(false);
+interface FitlersProps extends Pick<FilterPopoverURLQueryProps, 'displayedFilters'> {}
+
+const Filters = ({ displayedFilters }: FitlersProps) => {
+  const [isVisible, setIsVisible] = React.useState(false);
   const { formatMessage } = useIntl();
-  const buttonRef = useRef();
+  const buttonRef = React.useRef<HTMLButtonElement>(null!);
   const handleToggle = () => {
     setIsVisible((prev) => !prev);
   };
@@ -35,19 +40,10 @@ const Filters = ({ displayedFilters }) => {
           />
         )}
       </Box>
+      {/* @ts-expect-error – TODO: fix this, maybe filtersSchema is supposed to be the same as FilterPopoverURLQueryProps['diplayedFilters'] so we can simplify? */}
       <FilterListURLQuery filtersSchema={displayedFilters} />
     </>
   );
 };
 
-Filters.propTypes = {
-  displayedFilters: PropTypes.arrayOf(
-    PropTypes.shape({
-      name: PropTypes.string.isRequired,
-      metadatas: PropTypes.shape({ label: PropTypes.string }),
-      fieldSchema: PropTypes.shape({ type: PropTypes.string }),
-    })
-  ).isRequired,
-};
-
-export default Filters;
+export { Filters, FitlersProps };

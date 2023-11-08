@@ -1,13 +1,14 @@
-import React from 'react';
-
-import PropTypes from 'prop-types';
 import { useIntl } from 'react-intl';
 
-import { getBasename } from '../../../../../../core/utils/basename';
+import { getBasename } from '../../../../../core/utils/basename';
 
-import MagicLinkWrapper from './MagicLinkWrapper';
+import { MagicLinkWrapper } from './MagicLinkWrapper';
 
-export const MagicLinkCE = ({ registrationToken }) => {
+interface MagicLinkCEProps {
+  registrationToken: string;
+}
+
+const MagicLinkCE = ({ registrationToken }: MagicLinkCEProps) => {
   const { formatMessage } = useIntl();
   const target = `${
     window.location.origin
@@ -23,10 +24,5 @@ export const MagicLinkCE = ({ registrationToken }) => {
   );
 };
 
-MagicLinkCE.defaultProps = {
-  registrationToken: '',
-};
-
-MagicLinkCE.propTypes = {
-  registrationToken: PropTypes.string,
-};
+export { MagicLinkCE };
+export type { MagicLinkCEProps };

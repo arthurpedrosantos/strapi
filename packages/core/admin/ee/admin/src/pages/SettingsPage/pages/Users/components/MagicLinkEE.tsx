@@ -1,13 +1,12 @@
-import React from 'react';
-
-import PropTypes from 'prop-types';
 import { useIntl } from 'react-intl';
 
-import { getBasename } from '../../../../../../../../../admin/src/core/utils/basename';
-import MagicLinkWrapper from '../../../../../../../../../admin/src/pages/Settings/pages/Users/components/MagicLink/MagicLinkWrapper';
+import { getBasename } from '../../../../../../../../admin/src/core/utils/basename';
+import { MagicLinkWrapper } from '../../../../../../../../admin/src/pages/Settings/pages/Users/components/MagicLinkWrapper';
+
+import type { MagicLinkCEProps } from '../../../../../../../../admin/src/pages/Settings/pages/Users/components/MagicLinkCE';
 
 // FIXME replace with parts compo when ready
-export const MagicLinkEE = ({ registrationToken }) => {
+export const MagicLinkEE = ({ registrationToken }: MagicLinkCEProps) => {
   const { formatMessage } = useIntl();
 
   if (registrationToken) {
@@ -26,7 +25,7 @@ export const MagicLinkEE = ({ registrationToken }) => {
   }
 
   return (
-    <MagicLinkWrapper target={`${window.location.origin}${getBasename()}auth/login`}>
+    <MagicLinkWrapper target={`${window.location.origin}${getBasename()}/auth/login`}>
       {formatMessage({
         id: 'app.components.Users.MagicLink.connect.sso',
         defaultMessage:
@@ -34,12 +33,4 @@ export const MagicLinkEE = ({ registrationToken }) => {
       })}
     </MagicLinkWrapper>
   );
-};
-
-MagicLinkEE.defaultProps = {
-  registrationToken: '',
-};
-
-MagicLinkEE.propTypes = {
-  registrationToken: PropTypes.string,
 };

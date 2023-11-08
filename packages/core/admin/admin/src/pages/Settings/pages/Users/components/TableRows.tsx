@@ -1,5 +1,3 @@
-import React from 'react';
-
 import {
   BaseCheckbox,
   Box,
@@ -10,24 +8,30 @@ import {
   Tr,
   Typography,
 } from '@strapi/design-system';
-import { onRowClick, stopPropagation } from '@strapi/helper-plugin';
+import { TableRowProps, onRowClick, stopPropagation } from '@strapi/helper-plugin';
 import { Pencil, Trash } from '@strapi/icons';
-import PropTypes from 'prop-types';
 import { useIntl } from 'react-intl';
 import { useHistory } from 'react-router-dom';
 
-import { getFullName } from '../../../../../../../utils/getFullName';
+import { SanitizedAdminUser } from '../../../../../../../shared/contracts/shared';
+import { getFullName } from '../../../../../utils/getFullName';
+
+import type { ListPageTableHeader } from '../ListPage';
+
+interface TableRowsProps extends Partial<TableRowProps<SanitizedAdminUser, ListPageTableHeader>> {
+  canDelete: boolean;
+}
 
 const TableRows = ({
   canDelete,
-  headers,
-  entriesToDelete,
+  headers = [],
+  entriesToDelete = [],
   onClickDelete,
   onSelectRow,
   withMainAction,
   withBulkActions,
-  rows,
-}) => {
+  rows = [],
+}: TableRowsProps) => {
   const {
     push,
     location: { pathname },
@@ -55,11 +59,13 @@ const TableRows = ({
                       id: 'app.component.table.select.one-entry',
                       defaultMessage: `Select {target}`,
                     },
-                    { target: getFullName(data.firstname, data.lastname) }
+                    { target: getFullName(data?.firstname ?? '', data.lastname) }
                   )}
                   checked={isChecked}
                   onChange={() => {
-                    onSelectRow({ name: data.id, value: !isChecked });
+                    if (onSelectRow) {
+                      onSelectRow({ name: data.id, value: !isChecked });
+                    }
                   }}
                 />
               </Td>
@@ -70,6 +76,7 @@ const TableRows = ({
                   {typeof cellFormatter === 'function' ? (
                     cellFormatter(data, { key, name, formatMessage, ...rest })
                   ) : (
+                    // @ts-expect-error – name === "roles" has the data value of `AdminRole[]` but the header has a cellFormatter value so this shouldn't be called.
                     <Typography textColor="neutral800">{data[name] || '-'}</Typography>
                   )}
                 </Td>
@@ -83,7 +90,7 @@ const TableRows = ({
                     onClick={() => push(`${pathname}/${data.id}`)}
                     label={formatMessage(
                       { id: 'app.component.table.edit', defaultMessage: 'Edit {target}' },
-                      { target: getFullName(data.firstname, data.lastname) }
+                      { target: getFullName(data.firstname ?? '', data.lastname) }
                     )}
                     noBorder
                     icon={<Pencil />}
@@ -92,10 +99,14 @@ const TableRows = ({
                   {canDelete && (
                     <Box paddingLeft={1} {...stopPropagation}>
                       <IconButton
-                        onClick={() => onClickDelete(data.id)}
+                        onClick={() => {
+                          if (onClickDelete) {
+                            onClickDelete(data.id);
+                          }
+                        }}
                         label={formatMessage(
                           { id: 'global.delete-target', defaultMessage: 'Delete {target}' },
-                          { target: getFullName(data.firstname, data.lastname) }
+                          { target: getFullName(data.firstname ?? '', data.lastname) }
                         )}
                         noBorder
                         icon={<Trash />}
@@ -112,25 +123,5 @@ const TableRows = ({
   );
 };
 
-TableRows.defaultProps = {
-  canDelete: false,
-  entriesToDelete: [],
-  onClickDelete() {},
-  onSelectRow() {},
-  rows: [],
-  withBulkActions: false,
-  withMainAction: false,
-};
-
-TableRows.propTypes = {
-  canDelete: PropTypes.bool,
-  entriesToDelete: PropTypes.array,
-  headers: PropTypes.array.isRequired,
-  onClickDelete: PropTypes.func,
-  onSelectRow: PropTypes.func,
-  rows: PropTypes.array,
-  withBulkActions: PropTypes.bool,
-  withMainAction: PropTypes.bool,
-};
-
-export default TableRows;
+export { TableRows };
+export type { TableRowsProps };

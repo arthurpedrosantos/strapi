@@ -1,17 +1,15 @@
-import React from 'react';
-
 import { configureStore } from '@reduxjs/toolkit';
 import { fixtures } from '@strapi/admin-test-utils';
 import { lightTheme, ThemeProvider } from '@strapi/design-system';
 import { TrackingProvider, useRBAC } from '@strapi/helper-plugin';
-import { render, waitFor } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import { createMemoryHistory } from 'history';
 import { IntlProvider } from 'react-intl';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { Provider } from 'react-redux';
 import { Route, Router } from 'react-router-dom';
 
-import ListPage from '../index';
+import { ListPageCE } from '../ListPage';
 
 jest.mock('../../../../../../hooks/useAdminUsers', () => ({
   __esModule: true,
@@ -63,8 +61,8 @@ jest.mock('@strapi/helper-plugin', () => ({
   })),
 }));
 
-const setup = (props) =>
-  render(() => <ListPage {...props} />, {
+const setup = () =>
+  render(<ListPageCE />, {
     wrapper({ children }) {
       const history = createMemoryHistory();
       const client = new QueryClient({
@@ -108,15 +106,16 @@ describe('ADMIN | Pages | USERS | ListPage', () => {
   });
 
   it('should show a list of users', async () => {
-    const { getByText } = setup();
+    const { findByText } = setup();
 
-    await waitFor(() => expect(getByText('soup')).toBeInTheDocument());
-    await waitFor(() => expect(getByText('dummy')).toBeInTheDocument());
-    await waitFor(() => expect(getByText('Active')).toBeInTheDocument());
-    await waitFor(() => expect(getByText('Inactive')).toBeInTheDocument());
+    await findByText('soup');
+    await findByText('dummy');
+    await findByText('Active');
+    await findByText('Inactive');
   });
 
   it('should not show the create button when the user does not have the rights to create', async () => {
+    // @ts-expect-error – mock
     useRBAC.mockImplementationOnce(() => ({
       allowedActions: { canCreate: false, canDelete: true, canRead: true, canUpdate: true },
     }));

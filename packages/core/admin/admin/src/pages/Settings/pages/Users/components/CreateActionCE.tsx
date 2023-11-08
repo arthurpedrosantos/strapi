@@ -1,11 +1,10 @@
-import React from 'react';
-
-import { Button } from '@strapi/design-system';
+import { Button, ButtonProps } from '@strapi/design-system';
 import { Envelop } from '@strapi/icons';
-import PropTypes from 'prop-types';
 import { useIntl } from 'react-intl';
 
-export const CreateActionCE = ({ onClick }) => {
+interface CreateActionCEProps extends Pick<ButtonProps, 'onClick'> {}
+
+const CreateActionCE = ({ onClick }: CreateActionCEProps) => {
   const { formatMessage } = useIntl();
 
   return (
@@ -18,6 +17,5 @@ export const CreateActionCE = ({ onClick }) => {
   );
 };
 
-CreateActionCE.propTypes = {
-  onClick: PropTypes.func.isRequired,
-};
+export { CreateActionCE };
+export type { CreateActionCEProps };

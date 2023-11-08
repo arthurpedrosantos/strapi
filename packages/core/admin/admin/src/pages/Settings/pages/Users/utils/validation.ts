@@ -1,7 +1,10 @@
 import { translatedErrors } from '@strapi/helper-plugin';
 import * as yup from 'yup';
 
-export const commonUserSchema = {
+/**
+ * @description This needs wrapping in `yup.object().shape()` before use.
+ */
+const COMMON_USER_SCHEMA = {
   firstname: yup.string().trim().required(translatedErrors.required),
   lastname: yup.string(),
   email: yup.string().email(translatedErrors.email).lowercase().required(translatedErrors.required),
@@ -21,16 +24,4 @@ export const commonUserSchema = {
     }),
 };
 
-const schema = {
-  ...commonUserSchema,
-  currentPassword: yup
-    .string()
-    .when(['password', 'confirmPassword'], (password, confirmPassword, passSchema) => {
-      return password || confirmPassword
-        ? passSchema.required(translatedErrors.required)
-        : passSchema;
-    }),
-  preferedLanguage: yup.string().nullable(),
-};
-
-export default schema;
+export { COMMON_USER_SCHEMA };

@@ -1,20 +1,18 @@
-import React from 'react';
-
 import { Button, Flex, Icon, Tooltip } from '@strapi/design-system';
 import { Envelop, ExclamationMarkCircle } from '@strapi/icons';
 import isNil from 'lodash/isNil';
 import PropTypes from 'prop-types';
 import { useIntl } from 'react-intl';
 
-import { useLicenseLimits } from '../../../../../../hooks/useLicenseLimits';
+import { useLicenseLimits } from '../../../../../hooks/useLicenseLimits';
 
-export const CreateActionEE = ({ onClick }) => {
+import type { CreateActionCEProps } from '../../../../../../../../admin/src/pages/Settings/pages/Users/components/CreateActionCE';
+
+export const CreateActionEE = ({ onClick }: CreateActionCEProps) => {
   const { formatMessage } = useIntl();
-  const {
-    license: { permittedSeats, shouldStopCreate },
-    isError,
-    isLoading,
-  } = useLicenseLimits();
+  const { license, isError, isLoading } = useLicenseLimits();
+
+  const { permittedSeats, shouldStopCreate } = license ?? {};
 
   if (isError || isLoading) {
     return null;

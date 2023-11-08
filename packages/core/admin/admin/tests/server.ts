@@ -18,11 +18,12 @@ export const server = setupServer(
             {
               id: 1,
               code: 'strapi-editor',
+              name: 'Editor',
             },
-
             {
               id: 2,
               code: 'strapi-author',
+              name: 'Author',
             },
           ],
         })
@@ -90,6 +91,11 @@ export const server = setupServer(
             id: 1,
             firstname: 'John',
             lastname: 'Doe',
+            emai: 'test@testing.com',
+            roles: [
+              { id: 1, code: 'strapi-editor', name: 'Editor' },
+              { id: 2, code: 'strapi-super-admin', name: 'Super Admin' },
+            ],
             params: {
               some: req.url.searchParams.get('some'),
             },
